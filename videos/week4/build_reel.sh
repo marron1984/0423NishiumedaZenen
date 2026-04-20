@@ -73,13 +73,53 @@ make_scene 3 "${IMG_FIRE}"   "炭と、呼吸を合わせる。"   "火の声に
 make_scene 4 "${IMG_DONE}"   "ゆっくりと、香りが立つ。" "その時を、待つ。"
 make_scene 5 "${IMG_CTA}"    "ひと皿、静かに。"         "その日の席を、プロフィールより。"
 
-# concat list
-: > "${TMP}/list.txt"
-for i in 1 2 3 4 5; do echo "file '${TMP}/s${i}.mp4'" >> "${TMP}/list.txt"; done
+# Scene 6: store info card (solid dark, Mincho).
+# Use textfile= to avoid colon/quote escaping issues in drawtext.
+INFO_DUR=6.0
+INFO_FADE_OUT=$(awk -v d="$INFO_DUR" 'BEGIN{printf "%.3f", d-0.5}')
+mkdir -p "${TMP}/txt"
+write_t () { printf '%s' "$2" > "${TMP}/txt/$1"; }
+write_t title.txt      "西梅田 禅園"
+write_t zip.txt        "〒530-0001"
+write_t addr1.txt      "大阪市北区梅田 2-5-25"
+write_t addr2.txt      "ハービスPLAZA B2F"
+write_t tel.txt        "TEL  06-6457-1002"
+write_t lunch.txt      "ランチ   11:00 - 14:45  L.O.14:00"
+write_t dinner.txt     "ディナー 17:30 - 22:00  L.O.21:00"
+write_t holiday.txt    "定休日　不定休"
+write_t budget_lbl.txt "ご予算　ディナー"
+write_t budget.txt     "通常 ¥9,000　／　宴会 ¥6,000 - ¥15,000"
+write_t cta.txt        "その日の席を、プロフィールより。"
 
-# Total duration: 5 scenes × DUR
-TOTAL=$(awk -v d="$DUR" 'BEGIN{printf "%.3f", d*5}')
-FADE_OUT_START=$(awk -v t="$TOTAL" 'BEGIN{printf "%.3f", t-1.0}')
+ffmpeg -hide_banner -loglevel error -y \
+  -f lavfi -i "color=c=0x0a0a0a:s=${W}x${H}:r=${FPS}:d=${INFO_DUR}" \
+  -vf "
+    drawbox=x=(iw-560)/2:y=405:w=560:h=2:color=white@0.35:t=fill,
+    drawbox=x=(iw-560)/2:y=780:w=560:h=2:color=white@0.35:t=fill,
+    drawbox=x=(iw-560)/2:y=1030:w=560:h=2:color=white@0.35:t=fill,
+    drawtext=fontfile=${FONT}:textfile=${TMP}/txt/title.txt:fontcolor=white:fontsize=92:x=(w-text_w)/2:y=270,
+    drawtext=fontfile=${FONT}:textfile=${TMP}/txt/zip.txt:fontcolor=white@0.7:fontsize=30:x=(w-text_w)/2:y=455,
+    drawtext=fontfile=${FONT}:textfile=${TMP}/txt/addr1.txt:fontcolor=white:fontsize=42:x=(w-text_w)/2:y=505,
+    drawtext=fontfile=${FONT}:textfile=${TMP}/txt/addr2.txt:fontcolor=white:fontsize=42:x=(w-text_w)/2:y=565,
+    drawtext=fontfile=${FONT}:textfile=${TMP}/txt/tel.txt:fontcolor=0xE8C77B:fontsize=54:x=(w-text_w)/2:y=670,
+    drawtext=fontfile=${FONT}:textfile=${TMP}/txt/lunch.txt:fontcolor=white:fontsize=38:x=(w-text_w)/2:y=820,
+    drawtext=fontfile=${FONT}:textfile=${TMP}/txt/dinner.txt:fontcolor=white:fontsize=38:x=(w-text_w)/2:y=880,
+    drawtext=fontfile=${FONT}:textfile=${TMP}/txt/holiday.txt:fontcolor=white@0.85:fontsize=36:x=(w-text_w)/2:y=950,
+    drawtext=fontfile=${FONT}:textfile=${TMP}/txt/budget_lbl.txt:fontcolor=white@0.7:fontsize=34:x=(w-text_w)/2:y=1075,
+    drawtext=fontfile=${FONT}:textfile=${TMP}/txt/budget.txt:fontcolor=white:fontsize=38:x=(w-text_w)/2:y=1135,
+    drawtext=fontfile=${FONT}:textfile=${TMP}/txt/cta.txt:fontcolor=0xE8C77B:fontsize=42:x=(w-text_w)/2:y=1700,
+    fade=t=in:st=0:d=0.5,fade=t=out:st=${INFO_FADE_OUT}:d=0.5
+  " \
+  -r ${FPS} -c:v libx264 -pix_fmt yuv420p -preset medium -crf 20 \
+  "${TMP}/s6.mp4"
+
+# concat list (scenes 1-5 + info card)
+: > "${TMP}/list.txt"
+for i in 1 2 3 4 5 6; do echo "file '${TMP}/s${i}.mp4'" >> "${TMP}/list.txt"; done
+
+# Total duration: 5 scenes × DUR + info card
+TOTAL=$(awk -v d="$DUR" -v i="$INFO_DUR" 'BEGIN{printf "%.3f", d*5+i}')
+FADE_OUT_START=$(awk -v t="$TOTAL" 'BEGIN{printf "%.3f", t-1.5}')
 
 if [ -n "${BGM:-}" ] && [ -f "${BGM}" ]; then
   # Final: concat + BGM (trim, fade in/out, -6dB) + faststart
