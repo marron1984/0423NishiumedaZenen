@@ -9,7 +9,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-FONT="/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf"
+FONT="/usr/share/fonts/opentype/ipafont-mincho/ipam.ttf"
 OUT="${SCRIPT_DIR}/zenen_week4_reel.mp4"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -67,11 +67,11 @@ make_scene () {
     "${TMP}/s${idx}.mp4"
 }
 
-make_scene 1 "${IMG_SEASON}" "今月だけの、旬の一瞬。" "春の大阪、この季節に味わう一皿。"
-make_scene 2 "${IMG_PREP}"   "職人の手で、仕立てる。" "一切の妥協なく、素材と向き合う。"
-make_scene 3 "${IMG_FIRE}"   "火入れを、見極める。" "炭の香り、温度、時間を読む。"
-make_scene 4 "${IMG_DONE}"   "この技術が、この味に。" "だから、この価格になる。"
-make_scene 5 "${IMG_CTA}"    "一日限定のご用意。" "ご予約はプロフィールから。"
+make_scene 1 "${IMG_SEASON}" "桜の下で、春を待つ。"     "ほんの数日、この景色。"
+make_scene 2 "${IMG_PREP}"   "指先が、素材を見る。"     "一尾と、静かに向き合う。"
+make_scene 3 "${IMG_FIRE}"   "炭と、呼吸を合わせる。"   "火の声に、耳を傾けて。"
+make_scene 4 "${IMG_DONE}"   "ゆっくりと、香りが立つ。" "その時を、待つ。"
+make_scene 5 "${IMG_CTA}"    "ひと皿、静かに。"         "その日の席を、プロフィールより。"
 
 # concat list
 : > "${TMP}/list.txt"
