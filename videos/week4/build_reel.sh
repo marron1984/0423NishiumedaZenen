@@ -31,6 +31,10 @@ for v in IMG_SEASON IMG_PREP IMG_FIRE IMG_DONE IMG_CTA; do
   [ -f "${!v}" ] || { echo "Missing $v: ${!v}" >&2; exit 1; }
 done
 
+# BGM (first MP3 found in repo root)
+BGM="$(ls "${REPO_DIR}"/*.mp3 2>/dev/null | head -1 || true)"
+[ -n "${BGM}" ] && [ -f "${BGM}" ] && echo "BGM: ${BGM}" || echo "BGM: (none — silent)"
+
 make_scene () {
   local idx="$1" img="$2" title="$3" sub="$4"
   local fade_out_start
@@ -71,15 +75,35 @@ make_scene 5 "${IMG_CTA}"    "一日限定のご用意。" "ご予約はプロ�
 : > "${TMP}/list.txt"
 for i in 1 2 3 4 5; do echo "file '${TMP}/s${i}.mp4'" >> "${TMP}/list.txt"; done
 
-# Final: concat + silent AAC (IG compatibility) + faststart
-ffmpeg -hide_banner -loglevel error -y \
-  -f concat -safe 0 -i "${TMP}/list.txt" \
-  -f lavfi -i "anullsrc=channel_layout=stereo:sample_rate=44100" \
-  -shortest \
-  -c:v libx264 -pix_fmt yuv420p -preset medium -crf 20 \
-  -c:a aac -b:a 128k -ar 44100 \
-  -movflags +faststart \
-  "${OUT}"
+# Total duration: 5 scenes × DUR
+TOTAL=$(awk -v d="$DUR" 'BEGIN{printf "%.3f", d*5}')
+FADE_OUT_START=$(awk -v t="$TOTAL" 'BEGIN{printf "%.3f", t-1.0}')
+
+if [ -n "${BGM:-}" ] && [ -f "${BGM}" ]; then
+  # Final: concat + BGM (trim, fade in/out, -6dB) + faststart
+  ffmpeg -hide_banner -loglevel error -y \
+    -f concat -safe 0 -i "${TMP}/list.txt" \
+    -i "${BGM}" \
+    -filter_complex "[1:a]atrim=0:${TOTAL},asetpts=PTS-STARTPTS,
+                     volume=0.5,
+                     afade=t=in:st=0:d=0.6,
+                     afade=t=out:st=${FADE_OUT_START}:d=1.0[a]" \
+    -map 0:v -map "[a]" \
+    -t "${TOTAL}" \
+    -c:v libx264 -pix_fmt yuv420p -preset medium -crf 20 \
+    -c:a aac -b:a 160k -ar 44100 \
+    -movflags +faststart \
+    "${OUT}"
+else
+  ffmpeg -hide_banner -loglevel error -y \
+    -f concat -safe 0 -i "${TMP}/list.txt" \
+    -f lavfi -i "anullsrc=channel_layout=stereo:sample_rate=44100" \
+    -shortest \
+    -c:v libx264 -pix_fmt yuv420p -preset medium -crf 20 \
+    -c:a aac -b:a 128k -ar 44100 \
+    -movflags +faststart \
+    "${OUT}"
+fi
 
 echo "Generated: ${OUT}"
 ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate,duration \
