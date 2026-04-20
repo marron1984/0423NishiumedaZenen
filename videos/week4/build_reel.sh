@@ -23,10 +23,10 @@ FADE=0.35          # in/out fade seconds
 # Image sources (glob by number to avoid Unicode NFD/NFC mismatches)
 pick () { ls "${REPO_DIR}"/*"$1"*."$2" 2>/dev/null | head -1; }
 IMG_SEASON="${REPO_DIR}/83010_0.jpg"
-IMG_PREP="$(pick 0008 jpg)"
-IMG_FIRE="$(pick 0124 JPG)"
-IMG_DONE="$(pick 0142 JPG)"
-IMG_CTA="$(pick 0139 JPG)"
+IMG_PREP="$(pick 0008 jpg)"       # 仕込み
+IMG_FIRE="$(pick 0124 JPG)"       # 炭火に生の切身
+IMG_DONE="$(pick 0139 JPG)"       # 焼き進行
+IMG_CTA="$(pick 0142 JPG)"        # 焼き上がり(最良の完成ショットをCTAへ)
 for v in IMG_SEASON IMG_PREP IMG_FIRE IMG_DONE IMG_CTA; do
   [ -f "${!v}" ] || { echo "Missing $v: ${!v}" >&2; exit 1; }
 done
@@ -47,18 +47,20 @@ make_scene () {
            crop=${W}:${H},
            setsar=1,
            eq=brightness=0.02:saturation=1.08[bg];
-      [bg]drawbox=y=ih-620:w=iw:h=620:color=black@0.55:t=fill[dim];
-      [dim]drawtext=fontfile=${FONT}:text='${title}':fontcolor=white:fontsize=76:
+      [bg]drawtext=fontfile=${FONT}:text='${title}':fontcolor=white:fontsize=76:
            x=(w-text_w)/2:y=h-460:
-           borderw=2:bordercolor=black@0.5:
+           borderw=5:bordercolor=black@0.9:
+           shadowcolor=black@0.7:shadowx=3:shadowy=3:
            alpha='if(lt(t,${FADE}),t/${FADE},if(gt(t,${fade_out_start}),(${DUR}-t)/${FADE},1))'[t1];
       [t1]drawtext=fontfile=${FONT}:text='${sub}':fontcolor=0xE8C77B:fontsize=50:
            x=(w-text_w)/2:y=h-340:
-           borderw=1:bordercolor=black@0.5:
+           borderw=4:bordercolor=black@0.9:
+           shadowcolor=black@0.7:shadowx=2:shadowy=2:
            alpha='if(lt(t,${FADE}+0.2),max(0,(t-${FADE})/${FADE}),if(gt(t,${fade_out_start}),(${DUR}-t)/${FADE},1))'[t2];
-      [t2]drawtext=fontfile=${FONT}:text='西梅田 禅園':fontcolor=white@0.85:fontsize=34:
+      [t2]drawtext=fontfile=${FONT}:text='西梅田 禅園':fontcolor=white@0.9:fontsize=34:
            x=(w-text_w)/2:y=80:
-           borderw=1:bordercolor=black@0.4[t3];
+           borderw=3:bordercolor=black@0.85:
+           shadowcolor=black@0.6:shadowx=2:shadowy=2[t3];
       [t3]fade=t=in:st=0:d=${FADE},fade=t=out:st=${fade_out_start}:d=${FADE}[v]
     " -map "[v]" \
     -r ${FPS} -c:v libx264 -pix_fmt yuv420p -preset medium -crf 20 \
