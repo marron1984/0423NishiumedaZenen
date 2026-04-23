@@ -22,12 +22,12 @@ FADE=0.35          # in/out fade seconds
 
 # Image sources (glob by number to avoid Unicode NFD/NFC mismatches)
 pick () { ls "${REPO_DIR}"/*"$1"*."$2" 2>/dev/null | head -1; }
-IMG_SEASON="${REPO_DIR}/83010_0.jpg"
-IMG_PREP="$(pick 0008 jpg)"       # 仕込み
+IMG_PREP="$(pick 0008 jpg)"       # 仕込み(職人の手)
 IMG_FIRE="$(pick 0124 JPG)"       # 炭火に生の切身
-IMG_DONE="$(pick 0139 JPG)"       # 焼き進行
-IMG_CTA="$(pick 0142 JPG)"        # 焼き上がり(最良の完成ショットをCTAへ)
-for v in IMG_SEASON IMG_PREP IMG_FIRE IMG_DONE IMG_CTA; do
+IMG_COOK="$(pick 0139 JPG)"       # 焼き進行
+IMG_DONE="$(pick 0142 JPG)"       # 焼き上がり(一尾)
+IMG_DISH="$(pick 4144 jpg)"       # 集合料理(コース全景)
+for v in IMG_PREP IMG_FIRE IMG_COOK IMG_DONE IMG_DISH; do
   [ -f "${!v}" ] || { echo "Missing $v: ${!v}" >&2; exit 1; }
 done
 
@@ -67,11 +67,11 @@ make_scene () {
     "${TMP}/s${idx}.mp4"
 }
 
-make_scene 1 "${IMG_SEASON}" "桜の下で、春を待つ。"     "ほんの数日、この景色。"
-make_scene 2 "${IMG_PREP}"   "指先が、素材を見る。"     "一尾と、静かに向き合う。"
-make_scene 3 "${IMG_FIRE}"   "炭と、呼吸を合わせる。"   "火の声に、耳を傾けて。"
-make_scene 4 "${IMG_DONE}"   "ゆっくりと、香りが立つ。" "その時を、待つ。"
-make_scene 5 "${IMG_CTA}"    "ひと皿、静かに。"         "その日の席を、プロフィールより。"
+make_scene 1 "${IMG_PREP}" "指先が、素材を見る。"       "一尾と、静かに向き合う。"
+make_scene 2 "${IMG_FIRE}" "炭と、呼吸を合わせる。"     "火の声に、耳を傾けて。"
+make_scene 3 "${IMG_COOK}" "ゆっくりと、香りが立つ。"   "その時を、待つ。"
+make_scene 4 "${IMG_DONE}" "ひと皿、静かに。"           "ひと尾に、ひとつの手仕事。"
+make_scene 5 "${IMG_DISH}" "手のしごとが、ここに集まる。" "その日の席を、プロフィールより。"
 
 # Scene 6: store info card (solid dark, Mincho).
 # Use textfile= to avoid colon/quote escaping issues in drawtext.
